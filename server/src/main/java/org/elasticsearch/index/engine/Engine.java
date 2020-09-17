@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -1012,6 +1013,7 @@ public abstract class Engine implements Closeable {
 
         private final String source;
         private final Closeable onClose;
+        private final AtomicInteger refs;
 
         public Searcher(String source,
                         IndexReader reader,
@@ -1023,6 +1025,7 @@ public abstract class Engine implements Closeable {
             setQueryCachingPolicy(queryCachingPolicy);
             this.source = source;
             this.onClose = onClose;
+            this.refs = new AtomicInteger(1);
         }
 
         /**
@@ -1030,6 +1033,10 @@ public abstract class Engine implements Closeable {
          */
         public String source() {
             return source;
+        }
+
+        public void incRef() {
+            refs.incrementAndGet();
         }
 
         public DirectoryReader getDirectoryReader() {
@@ -1041,13 +1048,15 @@ public abstract class Engine implements Closeable {
 
         @Override
         public void close() {
-            try {
-                onClose.close();
-            } catch (IOException e) {
-                throw new UncheckedIOException("failed to close", e);
-            } catch (AlreadyClosedException e) {
-                // This means there's a bug somewhere: don't suppress it
-                throw new AssertionError(e);
+            if (refs.decrementAndGet() == 0) {
+                try {
+                    onClose.close();
+                } catch (IOException e) {
+                    throw new UncheckedIOException("failed to close", e);
+                } catch (AlreadyClosedException e) {
+                    // This means there's a bug somewhere: don't suppress it
+                    throw new AssertionError(e);
+                }
             }
         }
     }

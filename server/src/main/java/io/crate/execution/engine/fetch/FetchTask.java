@@ -292,4 +292,8 @@ public class FetchTask implements Task {
     public int id() {
         return phase.phaseId();
     }
+
+    public UUID jobId() {
+        return jobId;
+    }
 }

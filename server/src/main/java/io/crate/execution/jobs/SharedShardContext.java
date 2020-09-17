@@ -43,6 +43,7 @@ public class SharedShardContext {
 
     private IndexService indexService;
     private IndexShard indexShard;
+    private Engine.Searcher searcher;
 
     SharedShardContext(IndicesService indicesService,
                        ShardId shardId,
@@ -55,7 +56,13 @@ public class SharedShardContext {
     }
 
     public Engine.Searcher acquireSearcher(String source) throws IndexNotFoundException {
-        return wrapSearcher.apply(indexShard().acquireSearcher(source));
+        if (searcher == null) {
+            searcher = wrapSearcher.apply(indexShard().acquireSearcher(source));
+            return searcher;
+        } else {
+            searcher.incRef();
+            return searcher;
+        }
     }
 
     public IndexShard indexShard() {
