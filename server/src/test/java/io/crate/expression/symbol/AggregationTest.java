@@ -23,7 +23,12 @@
 package io.crate.expression.symbol;
 
 import io.crate.execution.engine.aggregation.impl.CountAggregation;
+<<<<<<< HEAD
 import io.crate.test.integration.CrateUnitTest;
+=======
+import io.crate.metadata.FunctionInfo;
+import org.elasticsearch.test.ESTestCase;
+>>>>>>> 1d792ac058... Fix BWC issue with aggregation func resolving
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -37,8 +42,14 @@ public class AggregationTest extends CrateUnitTest {
 
     @Test
     public void test_serialization_with_filter() throws Exception {
+        var functionInfo = FunctionInfo.of(
+            CountAggregation.COUNT_STAR_SIGNATURE,
+            List.of(),
+            CountAggregation.COUNT_STAR_SIGNATURE.getReturnType().createType()
+        );
         Aggregation actual = new Aggregation(
             CountAggregation.COUNT_STAR_SIGNATURE,
+            functionInfo,
             CountAggregation.COUNT_STAR_SIGNATURE.getReturnType().createType(),
             CountAggregation.COUNT_STAR_SIGNATURE.getReturnType().createType(),
             List.of(),
